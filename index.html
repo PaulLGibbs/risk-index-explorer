@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>National Risk Index Explorer</title>
+    
+    <!-- ArcGIS Maps SDK for JavaScript -->
+    <link rel="stylesheet" href="https://js.arcgis.com/4.34/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.34/"></script>
+    
+    <!-- Calcite Design System -->
+    <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <calcite-shell>
+        <!-- Header -->
+        <calcite-navigation slot="header">
+            <calcite-navigation-logo 
+                slot="logo" 
+                heading="National Risk Index Explorer"
+                description="December 2025 (v1.20.0)"
+                icon="まpping">
+            </calcite-navigation-logo>
+            
+            <calcite-menu slot="content-end">
+                <calcite-menu-item 
+                    id="infoBtn"
+                    text="About" 
+                    icon-start="information">
+                </calcite-menu-item>
+            </calcite-menu>
+        </calcite-navigation>
+
+        <!-- Left Panel -->
+        <calcite-shell-panel slot="panel-start" display-mode="float" width-scale="m">
+            <calcite-panel heading="Analysis Tools">
+                <calcite-block heading="Risk Analysis" open collapsible>
+                    <calcite-icon slot="icon" icon="まpping"></calcite-icon>
+                    
+                    <calcite-label>
+                        Select Hazard Type
+                        <calcite-select id="hazardSelect">
+                            <calcite-option value="RISK_SCORE">Overall Risk Index</calcite-option>
+                            <calcite-option value="AVLN_RISKS">Avalanche</calcite-option>
+                            <calcite-option value="CFLD_RISKS">Coastal Flooding</calcite-option>
+                            <calcite-option value="CWAV_RISKS">Cold Wave</calcite-option>
+                            <calcite-option value="DRGT_RISKS">Drought</calcite-option>
+                            <calcite-option value="ERQK_RISKS">Earthquake</calcite-option>
+                            <calcite-option value="HAIL_RISKS">Hail</calcite-option>
+                            <calcite-option value="HWAV_RISKS">Heat Wave</calcite-option>
+                            <calcite-option value="HRCN_RISKS">Hurricane</calcite-option>
+                            <calcite-option value="ISTM_RISKS">Ice Storm</calcite-option>
+                            <calcite-option value="RFLD_RISKS">Inland Flooding</calcite-option>
+                            <calcite-option value="LNDS_RISKS">Landslide</calcite-option>
+                            <calcite-option value="LTNG_RISKS">Lightning</calcite-option>
+                            <calcite-option value="SWND_RISKS">Strong Wind</calcite-option>
+                            <calcite-option value="TRND_RISKS">Tornado</calcite-option>
+                            <calcite-option value="TSUN_RISKS">Tsunami</calcite-option>
+                            <calcite-option value="VLCN_RISKS">Volcanic Activity</calcite-option>
+                            <calcite-option value="WFIR_RISKS">Wildfire</calcite-option>
+                            <calcite-option value="WNTW_RISKS">Winter Weather</calcite-option>
+                        </calcite-select>
+                    </calcite-label>
+                    
+                    <br>
+                    
+                    <calcite-label>
+                        Visualization Type
+                        <calcite-segmented-control id="vizTypeControl" width="full">
+                            <calcite-segmented-control-item value="rating" checked>Rating</calcite-segmented-control-item>
+                            <calcite-segmented-control-item value="score">Score</calcite-segmented-control-item>
+                            <calcite-segmented-control-item value="value">Value</calcite-segmented-control-item>
+                        </calcite-segmented-control>
+                    </calcite-label>
+                </calcite-block>
+
+                <calcite-block heading="Additional Layers" collapsible>
+                    <calcite-icon slot="icon" icon="layers"></calcite-icon>
+                    
+                    <calcite-label layout="inline">
+                        <calcite-checkbox id="socialVulnCheck">Social Vulnerability</calcite-checkbox>
+                    </calcite-label>
+                    
+                    <calcite-label layout="inline">
+                        <calcite-checkbox id="communityResCheck">Community Resilience</calcite-checkbox>
+                    </calcite-label>
+                </calcite-block>
+
+                <calcite-block heading="Query & Filter" collapsible>
+                    <calcite-icon slot="icon" icon="filter"></calcite-icon>
+                    
+                    <calcite-label>
+                        Filter by Risk Rating
+                        <calcite-select id="ratingFilter">
+                            <calcite-option value="all">All Counties</calcite-option>
+                            <calcite-option value="Very High">Very High Risk</calcite-option>
+                            <calcite-option value="Relatively High">Relatively High Risk</calcite-option>
+                            <calcite-option value="Relatively Moderate">Relatively Moderate Risk</calcite-option>
+                            <calcite-option value="Relatively Low">Relatively Low Risk</calcite-option>
+                            <calcite-option value="Very Low">Very Low Risk</calcite-option>
+                        </calcite-select>
+                    </calcite-label>
+                    
+                    <br>
+                    
+                    <calcite-button id="applyFilterBtn" width="full" icon-start="filter">
+                        Apply Filter
+                    </calcite-button>
+                    
+                    <calcite-button id="clearFilterBtn" width="full" kind="neutral" icon-start="reset">
+                        Clear Filter
+                    </calcite-button>
+                </calcite-block>
+
+                <calcite-block heading="Statistics" collapsible id="statsBlock">
+                    <calcite-icon slot="icon" icon="graph-bar"></calcite-icon>
+                    <div id="statsContent">
+                        <calcite-notice open>
+                            <div slot="message">Select a hazard to view statistics</div>
+                        </calcite-notice>
+                    </div>
+                </calcite-block>
+            </calcite-panel>
+        </calcite-shell-panel>
+
+        <!-- Map View -->
+        <div id="viewDiv"></div>
+
+        <!-- Bottom Panel for Charts -->
+        <calcite-shell-panel slot="panel-bottom" display-mode="float" height-scale="m" id="chartPanel" hidden>
+            <calcite-panel heading="Risk Analysis Charts">
+                <calcite-action slot="header-actions-end" id="closeChartBtn" icon="x" text="Close"></calcite-action>
+                <div id="chartDiv"></div>
+            </calcite-panel>
+        </calcite-shell-panel>
+
+        <!-- Action Bar -->
+        <calcite-action-bar slot="panel-end">
+            <calcite-action id="chartAction" text="Show Charts" icon="graph-bar-side-by-side"></calcite-action>
+            <calcite-action id="basemapAction" text="Basemap Gallery" icon="basemap"></calcite-action>
+            <calcite-action id="layerListAction" text="Layer List" icon="layers"></calcite-action>
+            <calcite-action id="legendAction" text="Legend" icon="legend"></calcite-action>
+            <calcite-action id="measureAction" text="Measurement" icon="measure"></calcite-action>
+            <calcite-action id="sketchAction" text="Sketch" icon="rectangle"></calcite-action>
+        </calcite-action-bar>
+
+        <!-- Right Panel for Widgets -->
+        <calcite-shell-panel slot="panel-end" display-mode="float" width-scale="m" id="widgetPanel" hidden>
+            <calcite-panel id="widgetPanelContent">
+                <calcite-action slot="header-actions-end" id="closeWidgetBtn" icon="x" text="Close"></calcite-action>
+            </calcite-panel>
+        </calcite-shell-panel>
+    </calcite-shell>
+
+    <!-- Info Dialog -->
+    <calcite-dialog id="infoModal" heading="About National Risk Index">
+        <div>
+            <p><strong>Version:</strong> December 2025 (1.20.0)</p>
+            <p>The National Risk Index helps illustrate the communities most at risk for 18 natural hazards across the United States and territories.</p>
+            
+            <calcite-accordion>
+                <calcite-accordion-item heading="Hazards Covered" icon-start="まpping">
+                    <ul>
+                        <li>Avalanche</li>
+                        <li>Coastal Flooding</li>
+                        <li>Cold Wave</li>
+                        <li>Drought</li>
+                        <li>Earthquake</li>
+                        <li>Hail</li>
+                        <li>Heat Wave</li>
+                        <li>Hurricane</li>
+                        <li>Ice Storm</li>
+                        <li>Inland Flooding</li>
+                        <li>Landslide</li>
+                        <li>Lightning</li>
+                        <li>Strong Wind</li>
+                        <li>Tornado</li>
+                        <li>Tsunami</li>
+                        <li>Volcanic Activity</li>
+                        <li>Wildfire</li>
+                        <li>Winter Weather</li>
+                    </ul>
+                </calcite-accordion-item>
+                
+                <calcite-accordion-item heading="Data Components" icon-start="information">
+                    <p><strong>Risk Index:</strong> Composite score based on Expected Annual Loss, Social Vulnerability, and Community Resilience</p>
+                    <p><strong>Expected Annual Loss:</strong> Economic and population loss estimates</p>
+                    <p><strong>Social Vulnerability:</strong> U.S. Census Community Resilience Estimate</p>
+                    <p><strong>Community Resilience:</strong> FEMA modified Baseline Resilience Indicators</p>
+                </calcite-accordion-item>
+            </calcite-accordion>
+        </div>
+    </calcite-dialog>
+
+    <!-- Loading Indicator -->
+    <calcite-loader id="mainLoader" type="indeterminate" hidden></calcite-loader>
+
+    <script src="app.js"></script>
+</body>
+</html>
